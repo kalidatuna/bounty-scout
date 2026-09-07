@@ -62,12 +62,20 @@ def main():
     repository = gh_api(f"repos/{owner}/{repo}")
     issue = gh_api(f"repos/{owner}/{repo}/issues/{number}")
 
-    search = gh_api(
-        "search/issues",
-        {
-            "q": f"repo:{owner}/{repo} is:pr #{number}"
-        }
-    )
+timeline = gh_api(
+    f"repos/{owner}/{repo}/issues/{number}/timeline"
+)
+
+linked_prs = set()
+
+for event in timeline:
+    source = event.get("source", {})
+    source_issue = source.get("issue", {})
+
+    if source_issue.get("pull_request"):
+        url = source_issue.get("html_url")
+        if url:
+            linked_prs.add(url)
 
     repo_inactive_days = days_since(repository.get("pushed_at"))
     issue_age = days_since(issue.get("created_at"))
@@ -77,7 +85,7 @@ def main():
         for label in issue.get("labels", [])
     ]
 
-    competing_prs = search.get("total_count", 0)
+    competing_prs = len(linked_prs)
 
     score = 100
 
@@ -115,7 +123,7 @@ def main():
     print(f"Repo last push:   {repo_inactive_days} days ago")
     print(f"Issue age:        {issue_age} days")
     print(f"Comments:         {issue.get('comments', 0)}")
-    print(f"Possible PRs:     {competing_prs}")
+    print(f"Linked PRs:       {competing_prs}")
     print(f"Labels:           {', '.join(labels) if labels else 'None'}")
 
     print()
