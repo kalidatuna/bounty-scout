@@ -7,20 +7,19 @@ import sys
 from datetime import datetime, timezone
 
 
-def gh_api(endpoint, fields=None):
-    cmd = ["gh", "api", "-X", "GET", endpoint]
-
-    if fields:
-        for key, value in fields.items():
-            cmd += ["-f", f"{key}={value}"]
-
+def gh_api(endpoint):
     result = subprocess.run(
-        cmd,
+        [
+            "gh", "api",
+            "-H", "Accept: application/vnd.github+json",
+            endpoint,
+        ],
         capture_output=True,
-        text=True
+        text=True,
     )
 
     if result.returncode != 0:
+        print("GitHub API error:")
         print(result.stderr.strip())
         sys.exit(1)
 
@@ -28,9 +27,9 @@ def gh_api(endpoint, fields=None):
 
 
 def parse_issue_url(url):
-    match = re.match(
-        r"https?://github\.com/([^/]+)/([^/]+)/issues/(\d+)",
-        url
+    match = re.fullmatch(
+        r"https?://github\.com/([^/]+)/([^/]+)/issues/(\d+)/?",
+        url,
     )
 
     if not match:
@@ -47,8 +46,26 @@ def days_since(timestamp):
 
     then = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
     now = datetime.now(timezone.utc)
-
     return (now - then).days
+
+
+def linked_pull_requests(owner, repo, number):
+    timeline = gh_api(
+        f"repos/{owner}/{repo}/issues/{number}/timeline?per_page=100"
+    )
+
+    prs = set()
+
+    for event in timeline:
+        source = event.get("source") or {}
+        source_issue = source.get("issue") or {}
+
+        if source_issue.get("pull_request"):
+            url = source_issue.get("html_url")
+            if url:
+                prs.add(url)
+
+    return prs
 
 
 def main():
@@ -62,30 +79,16 @@ def main():
     repository = gh_api(f"repos/{owner}/{repo}")
     issue = gh_api(f"repos/{owner}/{repo}/issues/{number}")
 
-timeline = gh_api(
-    f"repos/{owner}/{repo}/issues/{number}/timeline"
-)
-
-linked_prs = set()
-
-for event in timeline:
-    source = event.get("source", {})
-    source_issue = source.get("issue", {})
-
-    if source_issue.get("pull_request"):
-        url = source_issue.get("html_url")
-        if url:
-            linked_prs.add(url)
+    prs = linked_pull_requests(owner, repo, number)
 
     repo_inactive_days = days_since(repository.get("pushed_at"))
     issue_age = days_since(issue.get("created_at"))
+    competing_prs = len(prs)
 
     labels = [
         label["name"]
         for label in issue.get("labels", [])
     ]
-
-    competing_prs = len(linked_prs)
 
     score = 100
 
@@ -110,25 +113,6 @@ for event in timeline:
 
     score = max(0, min(100, score))
 
-    print()
-    print("=" * 60)
-    print("BOUNTY SCOUT")
-    print("=" * 60)
-
-    print(f"Repository:       {owner}/{repo}")
-    print(f"Issue:            #{number} — {issue.get('title')}")
-    print(f"State:            {issue.get('state')}")
-    print(f"Stars:            {repository.get('stargazers_count')}")
-    print(f"Open issues:      {repository.get('open_issues_count')}")
-    print(f"Repo last push:   {repo_inactive_days} days ago")
-    print(f"Issue age:        {issue_age} days")
-    print(f"Comments:         {issue.get('comments', 0)}")
-    print(f"Linked PRs:       {competing_prs}")
-    print(f"Labels:           {', '.join(labels) if labels else 'None'}")
-
-    print()
-    print(f"Opportunity score: {score}/100")
-
     if score >= 80:
         recommendation = "STRONG CANDIDATE"
     elif score >= 60:
@@ -138,9 +122,33 @@ for event in timeline:
     else:
         recommendation = "SKIP"
 
-    print(f"Recommendation:   {recommendation}")
     print()
+    print("=" * 60)
+    print("BOUNTY SCOUT")
+    print("=" * 60)
 
+    print(f"Repository:        {owner}/{repo}")
+    print(f"Issue:             #{number} — {issue.get('title')}")
+    print(f"State:             {issue.get('state')}")
+    print(f"Stars:             {repository.get('stargazers_count')}")
+    print(f"Open issues:       {repository.get('open_issues_count')}")
+    print(f"Repo last push:    {repo_inactive_days} days ago")
+    print(f"Issue age:         {issue_age} days")
+    print(f"Comments:          {issue.get('comments', 0)}")
+    print(f"Linked PRs:        {competing_prs}")
+    print(f"Labels:            {', '.join(labels) if labels else 'None'}")
+
+    print()
+    print(f"Opportunity score: {score}/100")
+    print(f"Recommendation:    {recommendation}")
+
+    if prs:
+        print()
+        print("Linked pull requests:")
+        for url in sorted(prs):
+            print(f"  - {url}")
+
+    print()
     print("Important:")
     print("This score does NOT verify that a bounty is funded or payable.")
     print("Always verify bounty terms and contribution rules manually.")
