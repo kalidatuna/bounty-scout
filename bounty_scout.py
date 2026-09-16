@@ -68,6 +68,43 @@ def linked_pull_requests(owner, repo, number):
     return prs
 
 
+def opportunity_score(issue_state, repo_inactive_days, competing_prs, comments):
+    """Return the heuristic score and label without making API requests."""
+    score = 100
+
+    if issue_state != "open":
+        score -= 100
+
+    if repo_inactive_days is not None:
+        if repo_inactive_days > 365:
+            score -= 40
+        elif repo_inactive_days > 90:
+            score -= 15
+
+    if competing_prs >= 5:
+        score -= 35
+    elif competing_prs >= 2:
+        score -= 15
+    elif competing_prs == 1:
+        score -= 5
+
+    if comments > 20:
+        score -= 10
+
+    score = max(0, min(100, score))
+
+    if score >= 80:
+        recommendation = "STRONG CANDIDATE"
+    elif score >= 60:
+        recommendation = "INVESTIGATE"
+    elif score >= 40:
+        recommendation = "WEAK CANDIDATE"
+    else:
+        recommendation = "SKIP"
+
+    return score, recommendation
+
+
 def main():
     if len(sys.argv) != 2:
         print("Usage:")
@@ -90,37 +127,9 @@ def main():
         for label in issue.get("labels", [])
     ]
 
-    score = 100
-
-    if issue.get("state") != "open":
-        score -= 100
-
-    if repo_inactive_days is not None:
-        if repo_inactive_days > 365:
-            score -= 40
-        elif repo_inactive_days > 90:
-            score -= 15
-
-    if competing_prs >= 5:
-        score -= 35
-    elif competing_prs >= 2:
-        score -= 15
-    elif competing_prs == 1:
-        score -= 5
-
-    if issue.get("comments", 0) > 20:
-        score -= 10
-
-    score = max(0, min(100, score))
-
-    if score >= 80:
-        recommendation = "STRONG CANDIDATE"
-    elif score >= 60:
-        recommendation = "INVESTIGATE"
-    elif score >= 40:
-        recommendation = "WEAK CANDIDATE"
-    else:
-        recommendation = "SKIP"
+    score, recommendation = opportunity_score(
+        issue.get("state"), repo_inactive_days, competing_prs, issue.get("comments", 0)
+    )
 
     print()
     print("=" * 60)
