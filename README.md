@@ -1,5 +1,7 @@
 # Bounty Scout
 
+[![CI](https://github.com/kalidatuna/bounty-scout/actions/workflows/ci.yml/badge.svg)](https://github.com/kalidatuna/bounty-scout/actions/workflows/ci.yml)
+
 A Python command-line tool for reviewing GitHub issues as potential development opportunities. It reads repository metadata, issue details, and linked pull requests using the GitHub CLI, then prints a heuristic opportunity score.
 
 ## Quick start
