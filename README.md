@@ -51,3 +51,12 @@ python3 -m unittest discover -v
 ```
 
 Tests use mocks and require neither GitHub credentials nor network access. See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow.
+
+## Contributing
+
+Small focused improvements are preferred. Before opening a change:
+
+1. Check existing issues and pull requests to avoid duplicate work.
+2. Keep changes scoped to one improvement.
+3. Run the test suite locally with `python3 -m unittest discover -v`.
+4. Include a short explanation of the problem and how the change fixes it.
