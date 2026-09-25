@@ -75,11 +75,11 @@ def linked_pull_requests(owner, repo, number):
     return prs
 
 
-def opportunity_score(issue_state, repo_inactive_days, competing_prs, comments):
+def opportunity_score(issue_state, repo_inactive_days, competing_prs, comments, repo_unavailable=False):
     """Return the heuristic score and label without making API requests."""
     score = 100
 
-    if issue_state != "open":
+    if issue_state != "open" or repo_unavailable:
         score -= 100
 
     if repo_inactive_days is not None:
@@ -137,12 +137,15 @@ def main():
     ]
 
     score, recommendation = opportunity_score(
-        issue.get("state"), repo_inactive_days, competing_prs, issue.get("comments", 0)
+        issue.get("state"), repo_inactive_days, competing_prs, issue.get("comments", 0),
+        repository.get("archived", False) or repository.get("disabled", False),
     )
     report = {
         "repository": f"{owner}/{repo}", "issue_number": number,
         "title": issue.get("title"), "state": issue.get("state"),
         "stars": repository.get("stargazers_count"),
+        "archived": repository.get("archived", False),
+        "disabled": repository.get("disabled", False),
         "open_issues": repository.get("open_issues_count"),
         "repo_inactive_days": repo_inactive_days, "issue_age_days": issue_age,
         "comments": issue.get("comments", 0), "linked_prs": sorted(prs),
@@ -161,6 +164,7 @@ def main():
     print(f"Issue:             #{number} — {issue.get('title')}")
     print(f"State:             {issue.get('state')}")
     print(f"Stars:             {repository.get('stargazers_count')}")
+    print(f"Archived/disabled: {repository.get('archived', False)}/{repository.get('disabled', False)}")
     print(f"Open issues:       {repository.get('open_issues_count')}")
     print(f"Repo last push:    {repo_inactive_days} days ago")
     print(f"Issue age:         {issue_age} days")

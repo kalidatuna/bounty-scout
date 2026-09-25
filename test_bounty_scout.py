@@ -60,6 +60,9 @@ class BountyScoutTests(unittest.TestCase):
             with self.subTest(args=args):
                 self.assertEqual(scout.opportunity_score(*args), expected)
 
+    def test_archived_or_disabled_repo_is_not_recommended(self):
+        self.assertEqual(scout.opportunity_score("open", 0, 0, 0, True), (0, "SKIP"))
+
     @patch("bounty_scout.gh_api")
     def test_linked_prs_are_deduplicated_and_missing_sources_ignored(self, api):
         pr = {"source": {"issue": {"pull_request": {"url": "api-url"}, "html_url": "pr-url"}}}
