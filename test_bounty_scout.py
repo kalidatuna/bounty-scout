@@ -1,5 +1,6 @@
 import contextlib
 import io
+import subprocess
 import unittest
 from unittest.mock import patch
 
@@ -7,6 +8,23 @@ import bounty_scout as scout
 
 
 class BountyScoutTests(unittest.TestCase):
+    @patch("bounty_scout.subprocess.run", side_effect=FileNotFoundError)
+    def test_missing_github_cli_has_clear_error(self, _run):
+        with contextlib.redirect_stderr(io.StringIO()) as errors:
+            with self.assertRaises(SystemExit) as result:
+                scout.gh_api("repos/o/r")
+        self.assertEqual(result.exception.code, 1)
+        self.assertIn("not installed", errors.getvalue())
+
+    @patch("bounty_scout.subprocess.run")
+    def test_invalid_api_json_has_clear_error(self, run):
+        run.return_value = subprocess.CompletedProcess([], 0, "not JSON", "")
+        with contextlib.redirect_stderr(io.StringIO()) as errors:
+            with self.assertRaises(SystemExit) as result:
+                scout.gh_api("repos/o/r")
+        self.assertEqual(result.exception.code, 1)
+        self.assertIn("invalid JSON", errors.getvalue())
+
     def test_issue_url_accepts_trailing_slash(self):
         self.assertEqual(scout.parse_issue_url("https://github.com/o/r/issues/123/"), ("o", "r", 123))
 

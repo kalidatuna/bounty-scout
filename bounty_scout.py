@@ -8,22 +8,26 @@ from datetime import datetime, timezone
 
 
 def gh_api(endpoint):
-    result = subprocess.run(
-        [
-            "gh", "api",
-            "-H", "Accept: application/vnd.github+json",
-            endpoint,
-        ],
-        capture_output=True,
-        text=True,
-    )
+    try:
+        result = subprocess.run(
+            ["gh", "api", "-H", "Accept: application/vnd.github+json", endpoint],
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        print("GitHub CLI (gh) is not installed or not on PATH.", file=sys.stderr)
+        sys.exit(1)
 
     if result.returncode != 0:
         print("GitHub API error:")
         print(result.stderr.strip())
         sys.exit(1)
 
-    return json.loads(result.stdout)
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        print("GitHub API returned invalid JSON.", file=sys.stderr)
+        sys.exit(1)
 
 
 def parse_issue_url(url):
