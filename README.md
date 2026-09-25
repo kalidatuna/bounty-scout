@@ -13,11 +13,13 @@ git clone https://github.com/kalidatuna/bounty-scout.git
 cd bounty-scout
 gh auth login
 python3 bounty_scout.py https://github.com/OWNER/REPOSITORY/issues/123
+python3 bounty_scout.py https://github.com/OWNER/REPOSITORY/issues/123 --json
 ```
 
 Replace the uppercase placeholders and issue number with a real issue. The tool performs read-only API requests using your existing GitHub CLI authentication. Access to private issues depends on that account's permissions.
 
 The report includes issue state, labels, age, comments, repository activity, linked PR URLs, a score from 0 to 100, and a recommendation.
+Use `--json` to get the same findings as structured data for scripts.
 
 ## How the score works
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import json
 import re
 import subprocess
@@ -112,12 +113,11 @@ def opportunity_score(issue_state, repo_inactive_days, competing_prs, comments):
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage:")
-        print("python3 bounty_scout.py <github-issue-url>")
-        sys.exit(1)
-
-    owner, repo, number = parse_issue_url(sys.argv[1])
+    parser = argparse.ArgumentParser(description="Review a GitHub issue as a development opportunity")
+    parser.add_argument("issue_url", help="GitHub issue URL")
+    parser.add_argument("--json", action="store_true", help="Print a machine-readable report")
+    args = parser.parse_args()
+    owner, repo, number = parse_issue_url(args.issue_url)
 
     repository = gh_api(f"repos/{owner}/{repo}")
     issue = gh_api(f"repos/{owner}/{repo}/issues/{number}")
@@ -139,6 +139,18 @@ def main():
     score, recommendation = opportunity_score(
         issue.get("state"), repo_inactive_days, competing_prs, issue.get("comments", 0)
     )
+    report = {
+        "repository": f"{owner}/{repo}", "issue_number": number,
+        "title": issue.get("title"), "state": issue.get("state"),
+        "stars": repository.get("stargazers_count"),
+        "open_issues": repository.get("open_issues_count"),
+        "repo_inactive_days": repo_inactive_days, "issue_age_days": issue_age,
+        "comments": issue.get("comments", 0), "linked_prs": sorted(prs),
+        "labels": labels, "score": score, "recommendation": recommendation,
+    }
+    if args.json:
+        print(json.dumps(report, indent=2))
+        return 0
 
     print()
     print("=" * 60)
@@ -171,6 +183,7 @@ def main():
     print("This score does NOT verify that a bounty is funded or payable.")
     print("Always verify bounty terms and contribution rules manually.")
     print()
+    return 0
 
 
 if __name__ == "__main__":

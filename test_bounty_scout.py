@@ -98,6 +98,21 @@ class BountyScoutTests(unittest.TestCase):
         self.assertIn("pull request", errors.getvalue())
         self.assertEqual(api.call_count, 2)
 
+    @patch("bounty_scout.gh_api")
+    def test_json_report_is_machine_readable(self, api):
+        api.side_effect = [
+            {"stargazers_count": 2, "open_issues_count": 3},
+            {"state": "open", "title": "Example", "labels": []},
+            [],
+        ]
+        output = io.StringIO()
+        with patch("sys.argv", ["bounty_scout.py", "https://github.com/o/r/issues/1", "--json"]), contextlib.redirect_stdout(output):
+            self.assertEqual(scout.main(), 0)
+        report = scout.json.loads(output.getvalue())
+        self.assertEqual(report["repository"], "o/r")
+        self.assertEqual(report["score"], 100)
+        self.assertEqual(report["linked_prs"], [])
+
     def test_missing_timestamp(self):
         self.assertIsNone(scout.days_since(None))
 
