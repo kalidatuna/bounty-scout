@@ -121,6 +121,9 @@ def main():
 
     repository = gh_api(f"repos/{owner}/{repo}")
     issue = gh_api(f"repos/{owner}/{repo}/issues/{number}")
+    if issue.get("pull_request"):
+        print("The URL points to a pull request, not an issue.", file=sys.stderr)
+        return 1
 
     prs = linked_pull_requests(owner, repo, number)
 
@@ -171,4 +174,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

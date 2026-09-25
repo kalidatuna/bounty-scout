@@ -90,6 +90,14 @@ class BountyScoutTests(unittest.TestCase):
         self.assertIn("help wanted", output.getvalue())
         self.assertEqual(api.call_count, 3)
 
+    @patch("bounty_scout.gh_api")
+    def test_pull_request_disguised_as_issue_is_rejected(self, api):
+        api.side_effect = [{}, {"pull_request": {"url": "api-pr"}}]
+        with patch("sys.argv", ["bounty_scout.py", "https://github.com/o/r/issues/1"]), contextlib.redirect_stderr(io.StringIO()) as errors:
+            self.assertEqual(scout.main(), 1)
+        self.assertIn("pull request", errors.getvalue())
+        self.assertEqual(api.call_count, 2)
+
     def test_missing_timestamp(self):
         self.assertIsNone(scout.days_since(None))
 
