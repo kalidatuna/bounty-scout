@@ -47,7 +47,15 @@ class BountyScoutTests(unittest.TestCase):
         pr = {"source": {"issue": {"pull_request": {"url": "api-url"}, "html_url": "pr-url"}}}
         api.return_value = [pr, pr, {}, {"source": None}, {"source": {"issue": {"html_url": "issue-url"}}}]
         self.assertEqual(scout.linked_pull_requests("o", "r", 1), {"pr-url"})
-        api.assert_called_once_with("repos/o/r/issues/1/timeline?per_page=100")
+        api.assert_called_once_with("repos/o/r/issues/1/timeline?per_page=100&page=1")
+
+    @patch("bounty_scout.gh_api")
+    def test_linked_prs_include_later_timeline_pages(self, api):
+        first_page = [{} for _ in range(100)]
+        second_page = [{"source": {"issue": {"pull_request": {"url": "api-url"}, "html_url": "pr-url"}}}]
+        api.side_effect = [first_page, second_page]
+        self.assertEqual(scout.linked_pull_requests("o", "r", 1), {"pr-url"})
+        self.assertEqual(api.call_count, 2)
 
     @patch("bounty_scout.gh_api")
     def test_report_uses_existing_score_and_labels(self, api):

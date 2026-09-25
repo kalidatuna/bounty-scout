@@ -38,7 +38,7 @@ Recommendations: **80–100** strong candidate, **60–79** investigate, **40–
 ## Limitations
 
 - The score does not verify bounty funding, payment eligibility, implementation difficulty, specification quality, or contribution rules.
-- Only the first 100 timeline events are inspected. Linked PRs are deduplicated, but may be closed, unrelated, or otherwise not competing solutions.
+- All timeline pages are inspected. Linked PRs are deduplicated, but may be closed, unrelated, or otherwise not competing solutions.
 - Push recency and comment count are rough signals, not a judgment of project quality. GitHub's `open_issues_count` also includes pull requests.
 - API failures can result from authentication, permissions, rate limits, or missing resources. Check `gh auth status` and the reported API error.
 

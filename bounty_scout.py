@@ -50,20 +50,22 @@ def days_since(timestamp):
 
 
 def linked_pull_requests(owner, repo, number):
-    timeline = gh_api(
-        f"repos/{owner}/{repo}/issues/{number}/timeline?per_page=100"
-    )
-
     prs = set()
-
-    for event in timeline:
-        source = event.get("source") or {}
-        source_issue = source.get("issue") or {}
-
-        if source_issue.get("pull_request"):
-            url = source_issue.get("html_url")
-            if url:
-                prs.add(url)
+    page = 1
+    while True:
+        timeline = gh_api(
+            f"repos/{owner}/{repo}/issues/{number}/timeline?per_page=100&page={page}"
+        )
+        for event in timeline:
+            source = event.get("source") or {}
+            source_issue = source.get("issue") or {}
+            if source_issue.get("pull_request"):
+                url = source_issue.get("html_url")
+                if url:
+                    prs.add(url)
+        if len(timeline) < 100:
+            break
+        page += 1
 
     return prs
 
