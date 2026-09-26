@@ -148,6 +148,7 @@ def main():
         issue.get("locked", False),
     )
     report = {
+        "issue_url": issue.get("html_url") or f"https://github.com/{owner}/{repo}/issues/{number}",
         "repository": f"{owner}/{repo}", "issue_number": number,
         "title": issue.get("title"), "state": issue.get("state"),
         "locked": issue.get("locked", False),
@@ -169,6 +170,7 @@ def main():
     print("=" * 60)
 
     print(f"Repository:        {owner}/{repo}")
+    print(f"URL:               {report['issue_url']}")
     print(f"Issue:             #{number} — {issue.get('title')}")
     print(f"State:             {issue.get('state')}")
     print(f"Locked:            {issue.get('locked', False)}")

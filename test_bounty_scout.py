@@ -139,6 +139,7 @@ class BountyScoutTests(unittest.TestCase):
             self.assertEqual(scout.main(), 0)
         report = scout.json.loads(output.getvalue())
         self.assertEqual(report["repository"], "o/r")
+        self.assertEqual(report["issue_url"], "https://github.com/o/r/issues/1")
         self.assertEqual(report["score"], 100)
         self.assertEqual(report["linked_prs"], [])
 
