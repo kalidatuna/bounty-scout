@@ -2,6 +2,7 @@ import contextlib
 import io
 import subprocess
 import unittest
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import bounty_scout as scout
@@ -140,6 +141,10 @@ class BountyScoutTests(unittest.TestCase):
 
     def test_missing_timestamp(self):
         self.assertIsNone(scout.days_since(None))
+
+    def test_future_timestamp_does_not_report_negative_age(self):
+        future = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
+        self.assertEqual(scout.days_since(future), 0)
 
 
 if __name__ == "__main__":

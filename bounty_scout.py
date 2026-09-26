@@ -57,7 +57,7 @@ def days_since(timestamp):
 
     then = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
     now = datetime.now(timezone.utc)
-    return (now - then).days
+    return max(0, (now - then).days)
 
 
 def linked_pull_requests(owner, repo, number):
