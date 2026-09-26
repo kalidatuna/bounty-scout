@@ -62,6 +62,7 @@ def days_since(timestamp):
 
 def linked_pull_requests(owner, repo, number):
     prs = set()
+    open_prs = set()
     page = 1
     while True:
         timeline = gh_api(
@@ -74,11 +75,13 @@ def linked_pull_requests(owner, repo, number):
                 url = source_issue.get("html_url")
                 if url:
                     prs.add(url)
+                    if source_issue.get("state") != "closed":
+                        open_prs.add(url)
         if len(timeline) < 100:
             break
         page += 1
 
-    return prs
+    return prs, open_prs
 
 
 def opportunity_score(issue_state, repo_inactive_days, competing_prs, comments, repo_unavailable=False, issue_locked=False):
@@ -131,11 +134,11 @@ def main():
         print("The URL points to a pull request, not an issue.", file=sys.stderr)
         return 1
 
-    prs = linked_pull_requests(owner, repo, number)
+    prs, open_prs = linked_pull_requests(owner, repo, number)
 
     repo_inactive_days = days_since(repository.get("pushed_at"))
     issue_age = days_since(issue.get("created_at"))
-    competing_prs = len(prs)
+    competing_prs = len(open_prs)
 
     labels = [
         label["name"]
@@ -158,6 +161,7 @@ def main():
         "open_issues": repository.get("open_issues_count"),
         "repo_inactive_days": repo_inactive_days, "issue_age_days": issue_age,
         "comments": issue.get("comments", 0), "linked_prs": sorted(prs),
+        "open_linked_prs": sorted(open_prs),
         "labels": labels, "score": score, "recommendation": recommendation,
     }
     if args.json:
@@ -180,7 +184,7 @@ def main():
     print(f"Repo last push:    {repo_inactive_days} days ago")
     print(f"Issue age:         {issue_age} days")
     print(f"Comments:          {issue.get('comments', 0)}")
-    print(f"Linked PRs:        {competing_prs}")
+    print(f"Linked PRs:        {len(prs)} ({competing_prs} open or unknown)")
     print(f"Labels:            {', '.join(labels) if labels else 'None'}")
 
     print()
