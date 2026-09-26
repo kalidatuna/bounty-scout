@@ -16,6 +16,14 @@ class BountyScoutTests(unittest.TestCase):
         self.assertEqual(result.exception.code, 1)
         self.assertIn("not installed", errors.getvalue())
 
+    @patch("bounty_scout.subprocess.run", side_effect=subprocess.TimeoutExpired("gh", 20))
+    def test_api_timeout_has_clear_error(self, _run):
+        with contextlib.redirect_stderr(io.StringIO()) as errors:
+            with self.assertRaises(SystemExit) as result:
+                scout.gh_api("repos/o/r")
+        self.assertEqual(result.exception.code, 1)
+        self.assertIn("timed out", errors.getvalue())
+
     @patch("bounty_scout.subprocess.run")
     def test_invalid_api_json_has_clear_error(self, run):
         run.return_value = subprocess.CompletedProcess([], 0, "not JSON", "")

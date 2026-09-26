@@ -15,9 +15,13 @@ def gh_api(endpoint):
             ["gh", "api", "-H", "Accept: application/vnd.github+json", endpoint],
             capture_output=True,
             text=True,
+            timeout=20,
         )
     except FileNotFoundError:
         print("GitHub CLI (gh) is not installed or not on PATH.", file=sys.stderr)
+        sys.exit(1)
+    except subprocess.TimeoutExpired:
+        print("GitHub API request timed out after 20 seconds.", file=sys.stderr)
         sys.exit(1)
 
     if result.returncode != 0:
