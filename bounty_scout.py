@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 from datetime import datetime, timezone
+from urllib.parse import urlsplit
 
 
 def gh_api(endpoint):
@@ -32,12 +33,13 @@ def gh_api(endpoint):
 
 
 def parse_issue_url(url):
+    parsed = urlsplit(url)
     match = re.fullmatch(
-        r"https?://github\.com/([^/]+)/([^/]+)/issues/(\d+)/?",
-        url,
+        r"/([^/]+)/([^/]+)/issues/(\d+)/?",
+        parsed.path,
     )
 
-    if not match:
+    if parsed.scheme not in ("http", "https") or parsed.netloc != "github.com" or not match:
         print("Expected a GitHub issue URL like:")
         print("https://github.com/owner/repository/issues/123")
         sys.exit(1)

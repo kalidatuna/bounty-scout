@@ -28,6 +28,9 @@ class BountyScoutTests(unittest.TestCase):
     def test_issue_url_accepts_trailing_slash(self):
         self.assertEqual(scout.parse_issue_url("https://github.com/o/r/issues/123/"), ("o", "r", 123))
 
+    def test_issue_url_accepts_copied_query_and_fragment(self):
+        self.assertEqual(scout.parse_issue_url("https://github.com/o/r/issues/123?issue=123#issuecomment-1"), ("o", "r", 123))
+
     def test_invalid_issue_urls_exit(self):
         for url in ("https://example.com/o/r/issues/1", "https://github.com/o/r/pull/1", "garbage"):
             with self.subTest(url=url), contextlib.redirect_stdout(io.StringIO()):
