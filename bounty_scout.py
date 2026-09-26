@@ -81,11 +81,11 @@ def linked_pull_requests(owner, repo, number):
     return prs
 
 
-def opportunity_score(issue_state, repo_inactive_days, competing_prs, comments, repo_unavailable=False):
+def opportunity_score(issue_state, repo_inactive_days, competing_prs, comments, repo_unavailable=False, issue_locked=False):
     """Return the heuristic score and label without making API requests."""
     score = 100
 
-    if issue_state != "open" or repo_unavailable:
+    if issue_state != "open" or repo_unavailable or issue_locked:
         score -= 100
 
     if repo_inactive_days is not None:
@@ -145,10 +145,12 @@ def main():
     score, recommendation = opportunity_score(
         issue.get("state"), repo_inactive_days, competing_prs, issue.get("comments", 0),
         repository.get("archived", False) or repository.get("disabled", False),
+        issue.get("locked", False),
     )
     report = {
         "repository": f"{owner}/{repo}", "issue_number": number,
         "title": issue.get("title"), "state": issue.get("state"),
+        "locked": issue.get("locked", False),
         "stars": repository.get("stargazers_count"),
         "archived": repository.get("archived", False),
         "disabled": repository.get("disabled", False),
@@ -169,6 +171,7 @@ def main():
     print(f"Repository:        {owner}/{repo}")
     print(f"Issue:             #{number} — {issue.get('title')}")
     print(f"State:             {issue.get('state')}")
+    print(f"Locked:            {issue.get('locked', False)}")
     print(f"Stars:             {repository.get('stargazers_count')}")
     print(f"Archived/disabled: {repository.get('archived', False)}/{repository.get('disabled', False)}")
     print(f"Open issues:       {repository.get('open_issues_count')}")

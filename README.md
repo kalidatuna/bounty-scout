@@ -28,6 +28,7 @@ Start at 100, subtract the penalties below, then clamp to 0–100:
 | Signal | Penalty |
 | --- | --- |
 | Issue is not open | 100 |
+| Issue is locked | 100 |
 | Repository is archived or disabled | 100 |
 | Repository last push over 365 days ago | 40 |
 | Repository last push over 90 days ago (up to 365) | 15 |
