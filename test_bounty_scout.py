@@ -33,6 +33,17 @@ class BountyScoutTests(unittest.TestCase):
         self.assertEqual(result.exception.code, 1)
         self.assertIn("invalid JSON", errors.getvalue())
 
+    @patch("bounty_scout.subprocess.run")
+    def test_api_failure_reports_to_stderr(self, run):
+        run.return_value = subprocess.CompletedProcess([], 1, "", "HTTP 403")
+        output, errors = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+            with self.assertRaises(SystemExit) as result:
+                scout.gh_api("repos/o/r")
+        self.assertEqual(result.exception.code, 1)
+        self.assertEqual(output.getvalue(), "")
+        self.assertIn("HTTP 403", errors.getvalue())
+
     def test_issue_url_accepts_trailing_slash(self):
         self.assertEqual(scout.parse_issue_url("https://github.com/o/r/issues/123/"), ("o", "r", 123))
 

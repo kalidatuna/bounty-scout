@@ -25,8 +25,8 @@ def gh_api(endpoint):
         sys.exit(1)
 
     if result.returncode != 0:
-        print("GitHub API error:")
-        print(result.stderr.strip())
+        print("GitHub API error:", file=sys.stderr)
+        print(result.stderr.strip() or "The GitHub CLI returned an error without details.", file=sys.stderr)
         sys.exit(1)
 
     try:
