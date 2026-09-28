@@ -37,15 +37,21 @@ def gh_api(endpoint):
 
 
 def parse_issue_url(url):
-    parsed = urlsplit(url)
-    match = re.fullmatch(
-        r"/([^/]+)/([^/]+)/issues/(\d+)/?",
-        parsed.path,
-    )
+    try:
+        parsed = urlsplit(url)
+        match = re.fullmatch(
+            r"/([A-Za-z0-9-]+)/([A-Za-z0-9_.-]+)/issues/([0-9]+)/?",
+            parsed.path,
+        )
+        valid = (parsed.scheme in ("http", "https")
+                 and parsed.netloc.lower() == "github.com" and match
+                 and int(match.group(3)) > 0)
+    except ValueError:
+        valid = False
 
-    if parsed.scheme not in ("http", "https") or parsed.netloc != "github.com" or not match:
-        print("Expected a GitHub issue URL like:")
-        print("https://github.com/owner/repository/issues/123")
+    if not valid:
+        print("Expected a GitHub issue URL like:", file=sys.stderr)
+        print("https://github.com/owner/repository/issues/123", file=sys.stderr)
         sys.exit(1)
 
     return match.group(1), match.group(2), int(match.group(3))
