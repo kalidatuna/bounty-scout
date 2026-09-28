@@ -37,7 +37,7 @@ Start at 100, subtract the penalties below, then clamp to 0–100:
 | One linked PR | 5 |
 | More than 20 comments | 10 |
 
-Recommendations: **80–100** strong candidate, **60–79** investigate, **40–59** weak candidate, **0–39** skip. Missing repository timestamps incur no inactivity penalty.
+Recommendations: **80–100** strong candidate, **60–79** investigate, **40–59** weak candidate, **0–39** skip. Missing or malformed repository timestamps are reported as unknown and incur no inactivity penalty. Timestamps without a timezone are interpreted as UTC.
 
 ## Limitations
 

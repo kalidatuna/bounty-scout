@@ -166,6 +166,15 @@ class BountyScoutTests(unittest.TestCase):
     def test_missing_timestamp(self):
         self.assertIsNone(scout.days_since(None))
 
+    def test_malformed_timestamp_is_unknown(self):
+        for timestamp in ("not-a-date", "2026-99-01", 123, {}):
+            with self.subTest(timestamp=timestamp):
+                self.assertIsNone(scout.days_since(timestamp))
+
+    def test_timestamp_without_timezone_uses_utc(self):
+        timestamp = (datetime.now(timezone.utc) - timedelta(days=3, minutes=1)).replace(tzinfo=None).isoformat()
+        self.assertEqual(scout.days_since(timestamp), 3)
+
     def test_future_timestamp_does_not_report_negative_age(self):
         future = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
         self.assertEqual(scout.days_since(future), 0)
