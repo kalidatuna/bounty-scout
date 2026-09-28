@@ -88,6 +88,8 @@ def linked_pull_requests(owner, repo, number):
                     prs.add(url)
                     if source_issue.get("state") != "closed":
                         open_prs.add(url)
+                    else:
+                        open_prs.discard(url)
         if len(timeline) < 100:
             break
         page += 1

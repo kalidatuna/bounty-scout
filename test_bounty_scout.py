@@ -124,6 +124,18 @@ class BountyScoutTests(unittest.TestCase):
         self.assertEqual(scout.linked_pull_requests("o", "r", 1), ({"closed-pr"}, set()))
 
     @patch("bounty_scout.gh_api")
+    def test_latest_reference_state_controls_competition_across_pages(self, api):
+        def reference(state):
+            return {"source": {"issue": {"pull_request": {"url": "api-pr"},
+                                         "html_url": "pr-url", "state": state}}}
+        for states, expected in ((("open", "closed"), set()),
+                                 (("closed", "open"), {"pr-url"})):
+            with self.subTest(states=states):
+                api.side_effect = [[reference(states[0])] + [{}] * 99,
+                                   [reference(states[1])]]
+                self.assertEqual(scout.linked_pull_requests("o", "r", 1), ({"pr-url"}, expected))
+
+    @patch("bounty_scout.gh_api")
     def test_report_uses_existing_score_and_labels(self, api):
         api.side_effect = [
             {"stargazers_count": 2, "open_issues_count": 3},
