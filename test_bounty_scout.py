@@ -53,10 +53,24 @@ class BountyScoutTests(unittest.TestCase):
 
     def test_invalid_issue_urls_exit(self):
         for url in ("https://example.com/o/r/issues/1", "https://github.com/o/r/pull/1", "garbage"):
-            with self.subTest(url=url), contextlib.redirect_stdout(io.StringIO()):
+            with self.subTest(url=url), contextlib.redirect_stderr(io.StringIO()):
                 with self.assertRaises(SystemExit) as error:
                     scout.parse_issue_url(url)
                 self.assertEqual(error.exception.code, 1)
+
+    def test_malformed_issue_urls_report_only_to_stderr(self):
+        for url in ("https://[invalid/o/r/issues/1", "https://github.com/o/r/issues/0",
+                    "https://github.com/o/r/issues/١", "https://github.com/o/r%20x/issues/1"):
+            output, errors = io.StringIO(), io.StringIO()
+            with self.subTest(url=url), contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                with self.assertRaises(SystemExit) as error:
+                    scout.parse_issue_url(url)
+                self.assertEqual(error.exception.code, 1)
+                self.assertEqual(output.getvalue(), "")
+                self.assertIn("Expected a GitHub issue URL", errors.getvalue())
+
+    def test_issue_url_accepts_case_insensitive_hostname(self):
+        self.assertEqual(scout.parse_issue_url("https://GitHub.com/o/r/issues/1"), ("o", "r", 1))
 
     def test_inactivity_boundaries(self):
         for days, expected in ((None, 100), (90, 100), (91, 85), (365, 85), (366, 60)):
