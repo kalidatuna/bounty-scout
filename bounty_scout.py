@@ -61,7 +61,12 @@ def days_since(timestamp):
     if not timestamp:
         return None
 
-    then = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    try:
+        then = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    except (AttributeError, ValueError):
+        return None
+    if then.tzinfo is None:
+        then = then.replace(tzinfo=timezone.utc)
     now = datetime.now(timezone.utc)
     return max(0, (now - then).days)
 
