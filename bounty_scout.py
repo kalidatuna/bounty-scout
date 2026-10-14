@@ -23,6 +23,9 @@ def gh_api(endpoint):
     except subprocess.TimeoutExpired:
         print("GitHub API request timed out after 20 seconds.", file=sys.stderr)
         sys.exit(1)
+    except OSError as error:
+        print(f"Could not run GitHub CLI (gh): {error}", file=sys.stderr)
+        sys.exit(1)
 
     if result.returncode != 0:
         print("GitHub API error:", file=sys.stderr)

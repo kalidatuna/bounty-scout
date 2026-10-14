@@ -45,6 +45,7 @@ Recommendations: **80–100** strong candidate, **60–79** investigate, **40–
 - All timeline pages are inspected. Linked PRs are deduplicated using the state from their last timeline reference. Closed PRs remain in the report but do not lower the score; open or unknown-state PRs do. Cross-references can still be unrelated.
 - Push recency and comment count are rough signals, not a judgment of project quality. GitHub's `open_issues_count` also includes pull requests.
 - API failures can result from authentication, permissions, rate limits, or missing resources. Check `gh auth status` and the reported API error.
+- If `gh` exists but cannot execute, the tool reports the operating system error on stderr and exits 1. JSON output remains empty on failure.
 
 Contribution-policy detection, reward tracking, and deeper PR analysis remain planned work.
 
