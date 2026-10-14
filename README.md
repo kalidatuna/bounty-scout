@@ -46,6 +46,7 @@ Recommendations: **80–100** strong candidate, **60–79** investigate, **40–
 - Push recency and comment count are rough signals, not a judgment of project quality. GitHub's `open_issues_count` also includes pull requests.
 - API failures can result from authentication, permissions, rate limits, or missing resources. Check `gh auth status` and the reported API error.
 - If `gh` exists but cannot execute, the tool reports the operating system error on stderr and exits 1. JSON output remains empty on failure.
+- Unexpected repository, issue, timeline, label, or comment response shapes are reported on stderr with exit 1 before a report is printed. A failed timeline page never produces a partial report.
 
 Contribution-policy detection, reward tracking, and deeper PR analysis remain planned work.
 
