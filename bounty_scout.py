@@ -39,6 +39,14 @@ def gh_api(endpoint):
         sys.exit(1)
 
 
+def expect_json_type(value, expected_type, context):
+    """Reject unexpected API containers before report generation."""
+    if not isinstance(value, expected_type):
+        print(f"GitHub API returned an unexpected {context} response.", file=sys.stderr)
+        sys.exit(1)
+    return value
+
+
 def parse_issue_url(url):
     try:
         parsed = urlsplit(url)
@@ -79,15 +87,20 @@ def linked_pull_requests(owner, repo, number):
     open_prs = set()
     page = 1
     while True:
-        timeline = gh_api(
-            f"repos/{owner}/{repo}/issues/{number}/timeline?per_page=100&page={page}"
+        timeline = expect_json_type(
+            gh_api(f"repos/{owner}/{repo}/issues/{number}/timeline?per_page=100&page={page}"),
+            list, "timeline",
         )
         for event in timeline:
-            source = event.get("source") or {}
-            source_issue = source.get("issue") or {}
+            event = expect_json_type(event, dict, "timeline event")
+            source = event.get("source")
+            source = {} if source is None else expect_json_type(source, dict, "timeline source")
+            source_issue = source.get("issue")
+            source_issue = {} if source_issue is None else expect_json_type(source_issue, dict, "source issue")
             if source_issue.get("pull_request"):
                 url = source_issue.get("html_url")
                 if url:
+                    url = expect_json_type(url, str, "pull request URL")
                     prs.add(url)
                     if source_issue.get("state") != "closed":
                         open_prs.add(url)
@@ -144,8 +157,8 @@ def main():
     args = parser.parse_args()
     owner, repo, number = parse_issue_url(args.issue_url)
 
-    repository = gh_api(f"repos/{owner}/{repo}")
-    issue = gh_api(f"repos/{owner}/{repo}/issues/{number}")
+    repository = expect_json_type(gh_api(f"repos/{owner}/{repo}"), dict, "repository")
+    issue = expect_json_type(gh_api(f"repos/{owner}/{repo}/issues/{number}"), dict, "issue")
     if issue.get("pull_request"):
         print("The URL points to a pull request, not an issue.", file=sys.stderr)
         return 1
@@ -156,13 +169,14 @@ def main():
     issue_age = days_since(issue.get("created_at"))
     competing_prs = len(open_prs)
 
-    labels = [
-        label["name"]
-        for label in issue.get("labels", [])
-    ]
+    labels = []
+    for label in expect_json_type(issue.get("labels", []), list, "issue labels"):
+        label = expect_json_type(label, dict, "issue label")
+        labels.append(expect_json_type(label.get("name"), str, "label name"))
+    comments = expect_json_type(issue.get("comments", 0), int, "issue comments")
 
     score, recommendation = opportunity_score(
-        issue.get("state"), repo_inactive_days, competing_prs, issue.get("comments", 0),
+        issue.get("state"), repo_inactive_days, competing_prs, comments,
         repository.get("archived", False) or repository.get("disabled", False),
         issue.get("locked", False),
     )
